@@ -13,6 +13,7 @@ make_animation_file()
 
 
 # Dash Imports
+from dash import Dash
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
@@ -20,8 +21,9 @@ from dash.dependencies import Input, Output
 
 
 # Import App
-from Covid19.server import app
-server = app.server
+app = Dash(external_stylesheets=[dbc.themes.DARKLY],
+           suppress_callback_exceptions=True)
+
 
 
 # Import Layout
@@ -97,3 +99,6 @@ def switch_tab(at):
     elif at == "tab-3":
         return tab_uk
     return html.P("This shouldn't ever be displayed...")
+
+
+server = app.server
