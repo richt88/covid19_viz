@@ -20,15 +20,17 @@ from Covid19.data.ecdc_data import get_ecdc_data
 @app.callback(Output('worldmap-deaths', 'figure'),
               [Input('data_div_ecdc', 'children')])
 def update_world_map(data_div):
-    
+
     # # Get data
     df = get_ecdc_data()
-    
+
     # df maps
-    df_maps = df[df.index == df.index.max()]
-    
-    
-    
+    #df_maps = df[df.index == df.index.max()]
+    df = df.sort_index(ascending=False)
+    df_maps = df.drop_duplicates('countryterritoryCode', keep='first')
+
+
+
     # world Map
     fig = go.Figure(data=go.Choropleth(
         locations = df_maps['countryterritoryCode'],
@@ -40,9 +42,9 @@ def update_world_map(data_div):
         marker_line_width=0.5,
         colorbar_tickprefix = '',
         colorbar_title = 'Total Deaths',
-        
+
     ))
-    
+
     fig.update_layout(
         #title_text='Global Deaths',
         #height = 600,
@@ -67,8 +69,8 @@ def update_world_map(data_div):
             showarrow = False
         )]
     )
-    
-    return fig   
+
+    return fig
 
 
 @app.callback(Output('cum_death_plot','figure'),
@@ -77,14 +79,14 @@ def update_world_map(data_div):
                Input('log_toggle', 'value'),
                Input('smooth_toggle', 'value')])
 def update_cum_deaths(country_list, data_div, log_bool, smooth_bool):
-    
+
     # # Get data
     df = get_ecdc_data()
-    
+
     # Create Data traces
     traces = []
     for i, c in enumerate(country_list):
-        
+
         df_country = df[df['countriesAndTerritories']==c]
         color = df_country['plot_colours'].iloc[0]
         traces.append(
@@ -107,7 +109,7 @@ def update_cum_deaths(country_list, data_div, log_bool, smooth_bool):
                                 xaxis= {'title':'Days since 20th death',
                                         },
                                 legend_orientation="h",
-                                legend=dict(x=-.1, y=-0.4)))    
+                                legend=dict(x=-.1, y=-0.4)))
     if log_bool:
         fig.layout.yaxis = {'type':'log'}
     return fig
@@ -123,14 +125,14 @@ def update_cum_deaths(country_list, data_div, log_bool, smooth_bool):
 def update_daily_deaths(country_list, data_div, log_bool, smooth_bool):
     # Get data
     df = get_ecdc_data()
-    
+
     # Create Data traces
     traces = []
     for i, c in enumerate(country_list):
-        
+
         df_country = df[df['countriesAndTerritories']==c]
         color = df_country['plot_colours'].iloc[0]
-        
+
         if not smooth_bool:
             # Raw data
             traces.append(
@@ -165,7 +167,7 @@ def update_daily_deaths(country_list, data_div, log_bool, smooth_bool):
                     hovertemplate = ('<br><b>%{text}</b><br>' +
                                     '<b>Average Daily Deaths</b>: %{y:,.0f}')
                 ))
-        
+
     fig = go.Figure(data = traces,
                     layout = go.Layout(
                                 title='Daily Deaths',
@@ -174,10 +176,10 @@ def update_daily_deaths(country_list, data_div, log_bool, smooth_bool):
                                 xaxis= {'title':'Days since 20th death',
                                         },
                                 legend_orientation="h",
-                                legend=dict(x=-.1, y=-0.4)))        
+                                legend=dict(x=-.1, y=-0.4)))
     if log_bool:
-        fig.layout.yaxis = {'type':'log'}        
-       
+        fig.layout.yaxis = {'type':'log'}
+
     return fig
 
 
@@ -186,31 +188,31 @@ def update_daily_deaths(country_list, data_div, log_bool, smooth_bool):
               [Input('worldmap-deaths', 'hoverData' ),
                Input('data_div_ecdc', 'children')])
 def callback_maphover( hoverData, data_div ):
-    
+
     # Get data
     df = get_ecdc_data()
-       
+
     # df maps
     df_maps = df[df.index == df.index.max()]
 
-    
+
     try:
         country=hoverData['points'][0]['text']
         data = df_maps[df_maps['countriesAndTerritories']==country].iloc[0]
-        
+
         name = country.replace("_", " ")
         cases = data['cum_cases']
         deaths = data['cum_deaths']
         avg_daily_7day = data['daily_deaths_smoothed']
         date = str(data['day']) + "-" + str(data['month']) + "-" + str(data['year'])
-    
-        
+
+
         return [dcc.Markdown(f"**{name}:**  "),
-                dcc.Markdown(f"""Reported Cases:  {cases:,}  
-                            Reported Deaths:  {deaths:,}  
+                dcc.Markdown(f"""Reported Cases:  {cases:,}
+                            Reported Deaths:  {deaths:,}
                             Average daily deaths:  {avg_daily_7day:.0f}
                             """),
-                dcc.Markdown(f"""*Average based on last 3 days.*   
+                dcc.Markdown(f"""*Average based on last 3 days.*
                              *Data as of {date}*.
                             """),
                 html.Div('Click country to add/remove from plots below.',
@@ -228,14 +230,13 @@ def callback_mapclick( clickData, dropdown_values ):
         dropdown_set = set(dropdown_values)
         country = clickData['points'][0]['text']
         country_set = set([country])
-        
+
         if country in dropdown_set:
             dropdown_set = dropdown_set - country_set
         else:
             dropdown_set = dropdown_set | country_set
-            
+
         return list(dropdown_set)
     except:
         return dropdown_values
-    
-    
+
